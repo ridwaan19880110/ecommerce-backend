@@ -1,4 +1,5 @@
 fastapi
+fastapi-socketio
 uvicorn[standard]
 python-multipart
 python-dotenv
