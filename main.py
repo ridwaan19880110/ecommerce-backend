@@ -1,14 +1,14 @@
-# app/main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_socketio import SocketManager
-from dotenv import load_dotenv
+
 from app.api import products
-from app.api.products import router as product_router
 from app.db.database import engine
 from app.db.models import Base
+
 import asyncpg
 import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -17,24 +17,25 @@ app = FastAPI()
 # WebSocket support
 socket_manager = SocketManager(app=app)
 
-# Enable CORS
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update with allowed frontend origin in prod
+    allow_origins=["*"],  # Update in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register product router
-app.include_router(product_router, prefix="/api")
+# Register API routes
+app.include_router(products.router, prefix="/api")
 
-# Create tables
+# Create DB tables
 Base.metadata.create_all(bind=engine)
 
-# Database connection (for legacy support tickets)
-DATABASE_URL = os.getenv("SUPABASE_DB_URL")
+# Supabase Postgres credentials from .env
+DATABASE_URL = os.getenv("SUPABASE_DB_URL")  # e.g. postgresql://postgres:password@host:port/dbname
 
+# Async DB connection for support tickets
 async def get_db():
     return await asyncpg.connect(DATABASE_URL)
 
@@ -43,7 +44,7 @@ async def list_tickets():
     conn = await get_db()
     rows = await conn.fetch("SELECT * FROM support_tickets ORDER BY submitted_at DESC")
     await conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 @app.put("/api/support/tickets/{ticket_id}")
 async def update_ticket_status(ticket_id: int, payload: dict):

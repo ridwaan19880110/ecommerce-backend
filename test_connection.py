@@ -1,16 +1,18 @@
-import asyncio
-import asyncpg
-import os
-from dotenv import load_dotenv
+from app.db.database import engine, Base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text  # ✅ import text()
 
-load_dotenv()
+def test_db_connection():
+    try:
+        # Create a session and test connection
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
 
-async def fetch_sellers():
-    conn = await asyncpg.connect(os.getenv("DATABASE_URL"))
-    rows = await conn.fetch("SELECT id, email, created_at FROM public.sellers;")
-    await conn.close()
+        # Use SQLAlchemy text() for raw SQL
+        session.execute(text("SELECT 1"))
+        print("✅ Database connection successful")
+    except Exception as e:
+        print(f"❌ Failed to connect to database: {e}")
 
-    for row in rows:
-        print(dict(row))
-
-asyncio.run(fetch_sellers())
+if __name__ == "__main__":
+    test_db_connection()
